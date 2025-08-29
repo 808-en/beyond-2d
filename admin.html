@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beyond 2D - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: linear-gradient(to bottom right, #8B5CF6, #3B82F6, #10B981);
+        }
+        .table-row-declined {
+            background-color: #ef4444;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .table-row-done {
+            background-color: #22c55e;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .general-message-box {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1002;
+        }
+        .general-message-content {
+            background-color: #ffffff;
+            color: #1a202c;
+        }
+        .confirm-modal-overlay, .denied-modal-overlay, .manage-products-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1003;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .confirm-modal-overlay.is-open, .denied-modal-overlay.is-open, .manage-products-modal-overlay.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .confirm-modal-content, .denied-modal-content, .manage-products-modal-content {
+            background-color: #ffffff;
+            color: #1a202c;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        .denied-modal-content {
+            max-width: 90%;
+            width: 800px;
+            padding: 1.5rem;
+            text-align: left;
+        }
+        /* Styles for Manage Products Modal */
+        .manage-products-modal-content {
+            max-width: 90%;
+            width: 800px;
+            padding: 1.5rem;
+            text-align: left;
+            max-height: 90vh; /* Make modal content scrollable */
+            display: flex;
+            flex-direction: column;
+        }
+        .manage-products-modal-overlay.is-open .confirm-modal-content,
+        .denied-modal-overlay.is-open .denied-modal-content,
+        .manage-products-modal-overlay.is-open .manage-products-modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .product-list-scrollable {
+            max-height: 400px; /* Adjust as needed for delete products list */
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+        }
+    </style>
+</head>
+<body class="gradient-background text-white min-h-screen flex flex-col">
+
+    <header class="w-full p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <button id="viewDeniedOrdersBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-300 shadow-lg">
+                Denied Orders
+            </button>
+            <button id="manageProductsBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-300 shadow-lg">
+                Manage Products
+            </button>
+            <a href="login.html" class="text-white hover:text-gray-200 transition-colors duration-300 px-4 py-2 rounded-md">
+                <b style="color:#FF0000;">&larr; Logout</b>
+            </a>
+        </div>
+        <h1 class="text-4xl font-bold text-shadow-lg flex-grow text-center">Admin Panel</h1>
+        <div class="w-48"></div>
+    </header>
+
+    <main class="flex-grow p-8">
+        <div class="container mx-auto bg-gray-800 bg-opacity-70 rounded-lg shadow-xl p-6">
+            <h2 class="text-3xl font-bold mb-6 text-center">Pending Orders</h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Order ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Group Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Print Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Willing to Pay</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Tip</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody" class="bg-gray-800 divide-y divide-gray-700">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="confirmActionModal" class="confirm-modal-overlay hidden">
+        <div class="confirm-modal-content">
+            <p id="confirmMessage" class="text-xl font-semibold mb-6"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirmYesBtn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors duration-300 shadow-md">Yes</button>
+                <button id="confirmNoBtn" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-500 transition-colors duration-300 shadow-md">No</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deniedOrdersModal" class="denied-modal-overlay hidden">
+        <div class="denied-modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Denied Orders</h2>
+                <button id="closeDeniedOrdersModalBtn" class="text-gray-600 hover:text-gray-900 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="overflow-x-auto max-h-96">
+                <table class="min-w-full divide-y divide-gray-300">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Order ID</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">User Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Group Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Print Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deniedOrdersTableBody" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+            <p id="noDeniedOrdersMessage" class="text-gray-500 text-center mt-4 hidden">No denied orders to display.</p>
+        </div>
+    </div>
+
+    <div id="generalMessageBox" class="general-message-box fixed inset-0 flex items-center justify-center hidden">
+        <div class="general-message-content p-6 rounded-lg shadow-2xl text-center w-11/12 max-w-sm">
+            <p id="generalMessageText" class="text-lg font-semibold mb-4"></p>
+            <button id="closeGeneralMessageBox" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 shadow-md">OK</button>
+        </div>
+    </div>
+
+    <!-- Manage Products Modal -->
+    <div id="manageProductsModal" class="manage-products-modal-overlay hidden">
+        <div class="manage-products-modal-content bg-white p-8 rounded-lg shadow-xl relative text-gray-900">
+            <button onclick="closeModal('manageProductsModal')" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900 text-2xl font-bold">&times;</button>
+            <h2 class="text-3xl font-bold mb-6 text-center">Manage Products</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto pr-4">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Add New Product</h3>
+                    <form id="addProductForm" class="space-y-4">
+                        <div>
+                            <label for="productName" class="block text-sm font-medium text-gray-700">Product Name</label>
+                            <input type="text" id="productName" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" required>
+                        </div>
+                        <div>
+                            <label for="productPrice" class="block text-sm font-medium text-gray-700">Price</label>
+                            <input type="number" id="productPrice" step="0.01" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" required>
+                        </div>
+                        <div>
+                            <label for="productDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="productDescription" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" required></textarea>
+                        </div>
+                        <div class="border-t pt-4 mt-4 border-gray-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Product Image Source:</label>
+                            <div class="space-y-2">
+                                <div>
+                                    <label for="productImage" class="block text-xs font-medium text-gray-500">Image URL (e.g., from an image host)</label>
+                                    <input type="url" id="productImage" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="https://example.com/image.jpg">
+                                </div>
+                                <div class="flex items-center justify-center py-2 text-sm text-gray-500">OR</div>
+                                <div>
+                                    <label for="productLocalFile" class="block text-xs font-medium text-gray-500">Upload a Local File</label>
+                                    <input type="file" id="productLocalFile" accept="image/*" class="mt-1 block w-full text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                </div>
+                                <div class="flex items-center justify-center py-2 text-sm text-gray-500">OR</div>
+                                <div>
+                                    <label for="productGoogleDriveUrl" class="block text-xs font-medium text-gray-500">Google Drive Shareable URL</label>
+                                    <input type="url" id="productGoogleDriveUrl" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" placeholder="https://drive.google.com/file/d/...">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="productType" class="block text-sm font-medium text-gray-700">Item Type</label>
+                            <select id="productType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" required>
+                                <option value="">Select Type</option>
+                                <option value="pack">Pack</option>
+                                <option value="sale">Sale</option>
+                                <option value="normal">Normal</option>
+                                <option value="deluxe pack">Deluxe Pack</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="productMeta" class="block text-sm font-medium text-gray-700">Meta Name (for search)</label>
+                            <input type="text" id="productMeta" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" required>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300">Add Product</button>
+                    </form>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Delete Products</h3>
+                    <div id="deleteProductsList" class="product-list-scrollable bg-gray-100">
+                        <p id="noProductsToDeleteMessage" class="text-gray-500 text-center py-4">No products to delete.</p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('manageProductsModal')" class="w-full mt-4 bg-gray-400 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-500 transition-colors duration-300">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Helper functions for localStorage
+        function getLocalStorageData(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error(`Error parsing localStorage key "${key}":`, e);
+                return [];
+            }
+        }
+
+        function setLocalStorageData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error(`Error saving to localStorage key "${key}":`, e);
+            }
+        }
+
+        // General Message Box logic
+        const generalMessageBox = document.getElementById('generalMessageBox');
+        const generalMessageText = document.getElementById('generalMessageText');
+        const closeGeneralMessageBox = document.getElementById('closeGeneralMessageBox');
+
+        function showMessage(message) {
+            generalMessageText.textContent = message;
+            generalMessageBox.classList.remove('hidden');
+            setTimeout(() => generalMessageBox.classList.add('is-open'), 10);
+        }
+
+        function hideMessage() {
+            generalMessageBox.classList.remove('is-open');
+            setTimeout(() => generalMessageBox.classList.add('hidden'), 300);
+        }
+        closeGeneralMessageBox.addEventListener('click', hideMessage);
+
+        // Confirmation Modal logic
+        const confirmActionModal = document.getElementById('confirmActionModal');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmYesBtn = document.getElementById('confirmYesBtn');
+        const confirmNoBtn = document.getElementById('confirmNoBtn');
+
+        let resolveConfirmation;
+
+        function showConfirmation(message) {
+            confirmMessage.textContent = message;
+            confirmActionModal.classList.remove('hidden');
+            setTimeout(() => confirmActionModal.classList.add('is-open'), 10);
+
+            return new Promise((resolve) => {
+                resolveConfirmation = resolve;
+            });
+        }
+
+        function hideConfirmation() {
+            confirmActionModal.classList.remove('is-open');
+            setTimeout(() => confirmActionModal.classList.add('hidden'), 300);
+        }
+
+        confirmYesBtn.addEventListener('click', () => {
+            hideConfirmation();
+            if (resolveConfirmation) resolveConfirmation(true);
+        });
+
+        confirmNoBtn.addEventListener('click', () => {
+            hideConfirmation();
+            if (resolveConfirmation) resolveConfirmation(false);
+        });
+
+        // Modal utility functions
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.add('is-open'), 10);
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('is-open');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+        }
+
+        // Orders Table logic (unchanged from previous version)
+        const ordersTableBody = document.getElementById('ordersTableBody');
+
+        const renderOrders = () => {
+            const allOrders = getLocalStorageData('adminOrders');
+            ordersTableBody.innerHTML = '';
+            const pendingOrders = allOrders.filter(order => order.status === 'pending');
+
+            if (pendingOrders.length === 0) {
+                ordersTableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-gray-400">No pending orders.</td></tr>`;
+                return;
+            }
+
+            pendingOrders.forEach((order) => {
+                const row = document.createElement('tr');
+                row.id = `order-row-${order.id}`;
+                row.classList.add('hover:bg-gray-700', 'transition-colors', 'duration-200');
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">${order.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${order.userName || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${order.groupName || 'N/A'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${order.printName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$${order.willingToPay.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">$${order.tip.toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button data-id="${order.id}" class="done-button bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md mr-2 transition-colors duration-300 shadow-md">Done</button>
+                        <button data-id="${order.id}" class="decline-button bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-md">Decline</button>
+                    </td>
+                `;
+                ordersTableBody.appendChild(row);
+            });
+
+            document.querySelectorAll('.done-button').forEach(button => {
+                button.addEventListener('click', (event) => markAsDone(event.target.dataset.id));
+            });
+            document.querySelectorAll('.decline-button').forEach(button => {
+                button.addEventListener('click', (event) => declineOrder(event.target.dataset.id));
+            });
+        };
+
+        const markAsDone = async (orderId) => {
+            const confirmed = await showConfirmation(`Mark order ${orderId} as done?`);
+            if (confirmed) {
+                let allOrders = getLocalStorageData('adminOrders');
+                const orderIndex = allOrders.findIndex(order => order.id === orderId);
+                if (orderIndex !== -1) {
+                    allOrders[orderIndex].status = 'done';
+                    setLocalStorageData('adminOrders', allOrders);
+                    showMessage(`Order ${orderId} marked as done.`);
+                    renderOrders(); // Re-render pending orders
+                }
+            }
+        };
+
+        const declineOrder = async (orderId) => {
+            const confirmed = await showConfirmation(`Are you sure you want to decline order ${orderId}? This action will move it to Denied Orders.`);
+            if (confirmed) {
+                let allOrders = getLocalStorageData('adminOrders');
+                const orderIndex = allOrders.findIndex(order => order.id === orderId);
+                if (orderIndex !== -1) {
+                    allOrders[orderIndex].status = 'declined';
+                    setLocalStorageData('adminOrders', allOrders);
+                    showMessage(`Order ${orderId} declined and moved to Denied Orders.`);
+                    renderOrders(); // Re-render pending orders
+                }
+            }
+        };
+
+        // Denied Orders Modal logic (unchanged from previous version)
+        const viewDeniedOrdersBtn = document.getElementById('viewDeniedOrdersBtn');
+        const deniedOrdersModal = document.getElementById('deniedOrdersModal');
+        const closeDeniedOrdersModalBtn = document.getElementById('closeDeniedOrdersModalBtn');
+        const deniedOrdersTableBody = document.getElementById('deniedOrdersTableBody');
+        const noDeniedOrdersMessage = document.getElementById('noDeniedOrdersMessage');
+
+        function openDeniedOrdersModal() {
+            renderDeniedOrders();
+            openModal('deniedOrdersModal');
+        }
+
+        function hideDeniedOrdersModal() {
+            closeModal('deniedOrdersModal');
+        }
+
+        closeDeniedOrdersModalBtn.addEventListener('click', hideDeniedOrdersModal);
+        viewDeniedOrdersBtn.addEventListener('click', openDeniedOrdersModal);
+
+        const renderDeniedOrders = () => {
+            const allOrders = getLocalStorageData('adminOrders');
+            deniedOrdersTableBody.innerHTML = '';
+            const deniedOrders = allOrders.filter(order => order.status === 'declined');
+
+            if (deniedOrders.length === 0) {
+                noDeniedOrdersMessage.classList.remove('hidden');
+                deniedOrdersTableBody.classList.add('hidden'); // Hide the table if no orders
+            } else {
+                noDeniedOrdersMessage.classList.add('hidden');
+                deniedOrdersTableBody.classList.remove('hidden'); // Show the table
+                deniedOrders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.id = `denied-order-row-${order.id}`;
+                    row.classList.add('hover:bg-gray-50', 'transition-colors', 'duration-200');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${order.userName || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${order.groupName || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${order.printName}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button data-id="${order.id}" class="retrieve-button bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md mr-2 transition-colors duration-300 shadow-md">
+                                Retrieve
+                            </button>
+                            <button data-id="${order.id}" class="delete-denied-button bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-md">
+                                Delete
+                            </button>
+                        </td>
+                    `;
+                    deniedOrdersTableBody.appendChild(row);
+                });
+
+                document.querySelectorAll('.retrieve-button').forEach(button => {
+                    button.addEventListener('click', (event) => retrieveOrder(event.target.dataset.id || event.target.closest('button').dataset.id));
+                });
+                document.querySelectorAll('.delete-denied-button').forEach(button => {
+                    button.addEventListener('click', (event) => deleteDeniedOrder(event.target.dataset.id || event.target.closest('button').dataset.id));
+                });
+            }
+        };
+
+        const retrieveOrder = async (orderId) => {
+            const confirmed = await showConfirmation(`Retrieve order ${orderId} and move it back to Pending?`);
+            if (confirmed) {
+                let allOrders = getLocalStorageData('adminOrders');
+                const orderIndex = allOrders.findIndex(order => order.id === orderId);
+                if (orderIndex !== -1) {
+                    allOrders[orderIndex].status = 'pending';
+                    setLocalStorageData('adminOrders', allOrders);
+                    showMessage(`Order ${orderId} retrieved and moved back to Pending Orders.`);
+                    renderDeniedOrders(); // Re-render denied orders
+                    renderOrders(); // Re-render pending orders
+                }
+            }
+        };
+
+        const deleteDeniedOrder = async (orderId) => {
+            const confirmed = await showConfirmation(`Are you sure you want to permanently delete order ${orderId}? This action cannot be undone.`);
+            if (confirmed) {
+                let allOrders = getLocalStorageData('adminOrders');
+                allOrders = allOrders.filter(order => order.id !== orderId);
+                setLocalStorageData('adminOrders', allOrders);
+                showMessage(`Order ${orderId} permanently deleted.`);
+                renderDeniedOrders(); // Re-render denied orders
+            }
+        };
+
+        // Manage Products Modal logic
+        const manageProductsBtn = document.getElementById('manageProductsBtn');
+        const manageProductsModal = document.getElementById('manageProductsModal');
+        const addProductForm = document.getElementById('addProductForm');
+        const deleteProductsList = document.getElementById('deleteProductsList');
+        const noProductsToDeleteMessage = document.getElementById('noProductsToDeleteMessage');
+        const productImageInput = document.getElementById('productImage');
+        const productLocalFileInput = document.getElementById('productLocalFile');
+        const productGoogleDriveUrlInput = document.getElementById('productGoogleDriveUrl');
+
+        const renderProductsForDeletion = () => {
+            let allProducts = getLocalStorageData('allProducts'); // Fetch products from localStorage
+            deleteProductsList.innerHTML = ''; // Clear existing list
+            
+            if (allProducts.length === 0) {
+                noProductsToDeleteMessage.classList.remove('hidden');
+            } else {
+                noProductsToDeleteMessage.classList.add('hidden');
+                allProducts.forEach(product => {
+                    const productItem = document.createElement('div');
+                    productItem.className = 'flex items-center justify-between p-2 border-b border-gray-200 last:border-b-0 bg-gray-100 rounded-md shadow-sm mb-1';
+                    productItem.innerHTML = `
+                        <span class="text-gray-800">${product.name} (ID: ${product.id})</span>
+                        <button data-id="${product.id}" class="delete-product-button bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-md transition-colors duration-300">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    `;
+                    deleteProductsList.appendChild(productItem);
+                });
+
+                // Attach event listeners to newly created delete buttons
+                document.querySelectorAll('.delete-product-button').forEach(button => {
+                    button.addEventListener('click', (event) => deleteProduct(event.target.dataset.id || event.target.closest('button').dataset.id));
+                });
+            }
+        };
+
+        manageProductsBtn.addEventListener('click', () => {
+            renderProductsForDeletion(); // Render products when modal opens
+            openModal('manageProductsModal');
+        });
+
+        addProductForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            let imageUrl = '';
+            if (productLocalFileInput.files.length > 0) {
+                // Read local file as Data URL (base64)
+                const file = productLocalFileInput.files[0];
+                imageUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = () => resolve('');
+                    reader.readAsDataURL(file);
+                });
+                if (imageUrl.length > 5 * 1024 * 1024) { // Warn if base64 is too large (e.g., >5MB)
+                    showMessage("Warning: Local image is very large. Consider using a URL for better performance.");
+                }
+            } else if (productGoogleDriveUrlInput.value.trim() !== '') {
+                imageUrl = productGoogleDriveUrlInput.value.trim();
+            } else if (productImageInput.value.trim() !== '') {
+                imageUrl = productImageInput.value.trim();
+            } else {
+                imageUrl = 'https://placehold.co/400x300/cccccc/333333?text=No+Image';
+            }
+
+            let allProducts = getLocalStorageData('allProducts');
+            
+            const newProduct = {
+                id: crypto.randomUUID(), // Assign a unique ID
+                name: document.getElementById('productName').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                description: document.getElementById('productDescription').value,
+                image: imageUrl,
+                type: document.getElementById('productType').value,
+                meta: document.getElementById('productMeta').value.toLowerCase(),
+                size: 'N/A' // Default size as it's not in the form
+            };
+
+            allProducts.push(newProduct);
+            setLocalStorageData('allProducts', allProducts);
+
+            showMessage(`Product "${newProduct.name}" added successfully!`);
+            addProductForm.reset();
+            renderProductsForDeletion(); // Update the delete list
+            // Notify prints.html that products might have changed
+            window.dispatchEvent(new Event('storage')); // Simulate storage event
+        });
+
+        const deleteProduct = async (productId) => {
+            const confirmed = await showConfirmation(`Are you sure you want to delete product ID ${productId}? This action cannot be undone.`);
+
+            if (confirmed) {
+                let allProducts = getLocalStorageData('allProducts');
+                allProducts = allProducts.filter(product => product.id !== productId);
+                setLocalStorageData('allProducts', allProducts);
+                showMessage(`Product ID ${productId} permanently deleted.`);
+                renderProductsForDeletion(); // Update the delete list
+                // Notify prints.html that products might have changed
+                window.dispatchEvent(new Event('storage')); // Simulate storage event
+            }
+        };
+
+        // Initial render on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderOrders();
+            renderProductsForDeletion(); // Also render products initially
+        });
+    </script>
+</body>
+</html>

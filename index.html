@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beyond 2D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="Logo.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="Logo.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="Logo.ico">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .gradient-background {
+            background: linear-gradient(to bottom right, #8B5CF6, #3B82F6, #10B981);
+        }
+        .explore-button {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .explore-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            transition: all 0.75s ease-out;
+            transform: translate(-50%, -50%) scale(0);
+            z-index: 0;
+        }
+        .explore-button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .explore-button span {
+            position: relative;
+            z-index: 1;
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .modal-content {
+            z-index: 1001;
+            /* Added styles for scrollability */
+            max-height: 90vh; /* Limit height to 90% of viewport height */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        .general-message-box {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1002;
+        }
+        .general-message-content {
+            background-color: #ffffff;
+            color: #1a202c;
+        }
+        .confirm-modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1003;
+        }
+        .confirm-modal-content {
+            background-color: #ffffff;
+            color: #1a202c;
+        }
+    </style>
+</head>
+<body class="gradient-background text-white min-h-screen flex flex-col">
+
+    <header class="w-full p-4 flex flex-col sm:flex-row items-center justify-between">
+        <div class="flex-grow flex justify-center sm:justify-start mb-4 sm:mb-0">
+            <h1 class="text-4xl font-bold text-shadow-lg">Beyond 2D</h1>
+        </div>
+        <div class="flex justify-center sm:justify-end">
+            <a href="login.html" class="text-white hover:text-gray-200 transition-colors duration-300 px-4 py-2 rounded-md">Admin Login</a>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4 text-center">
+        <h2 class="text-5xl md:text-6xl font-extrabold mb-8 drop-shadow-lg">Unlock New Dimensions</h2>
+        <p class="text-xl md:text-2xl mb-4 max-w-2xl">Bring your visions to life with Beyond 2D! The name says it all.</p>
+        <p class="text-lg md:text-xl mb-12 max-w-3xl">
+            Beyond 2D is your premier choice for all 3D printing needs, offering an unbeatable combination of <b>affordable prices</b> and <b>high-quality products</b>. We aim to provide <b>first-class 3D printing</b> <b>without hidden costs</b>, which is why we offer <b>free shipping on all orders</b>. Experience the future of manufacturing with a company that respects your budget and your standards. Discover our comprehensive range of services and impressive website today!
+        </p>
+
+        <div class="flex flex-col sm:flex-row space-y-6 sm:space-y-0 sm:space-x-6">
+            <button id="buyButton" class="bg-white text-purple-600 font-bold py-4 px-8 rounded-full shadow-lg hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50">
+                Buy Now
+            </button>
+
+            <a href="prints.html" class="explore-button bg-purple-700 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-purple-800 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-opacity-50">
+                <span>Explore Prints</span>
+            </a>
+        </div>
+    </main>
+
+    <div id="buyFormModal" class="modal-overlay fixed inset-0 flex items-center justify-center">
+        <div class="modal-content bg-gray-800 p-8 rounded-lg shadow-2xl w-11/12 max-w-md relative">
+            <h3 class="text-3xl font-bold mb-6 text-center">Place Order</h3>
+            <form id="orderForm" class="space-y-6">
+                <div>
+                    <label for="userName" class="block text-lg font-medium mb-2">Your Name</label>
+                    <input type="text" id="userName" name="userName" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 'John Doe'" required>
+                </div>
+                <div>
+                    <label for="groupName" class="block text-lg font-medium mb-2">Group/Identification</label>
+                    <input type="text" id="groupName" name="groupName" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., '[last name]' or 'Red group-B'" required>
+                </div>
+                <div>
+                    <label for="printName" class="block text-lg font-medium mb-2">Print Name</label>
+                    <input type="text" id="printName" name="printName" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 'Benchy Boat'" required>
+                </div>
+                <div>
+                    <label for="willingToPay" class="block text-lg font-medium mb-2">Willing to Pay <i style="font-size:15px;">(format: 2.00, no dollar sign ($)</i></label>
+                    <input type="number" id="willingToPay" name="willingToPay" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" min="2.00" step="0.01" placeholder="Minimum 2.00" required>
+                </div>
+                <div>
+                    <label for="tipChoice" class="block text-lg font-medium mb-2">Add Tip</label>
+                    <select id="tipChoice" name="tipChoice" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="0.00">0.00</option>
+                        <option value="1.00">1.00</option>
+                        <option value="2.00">2.00</option>
+                        <option value="5.00">5.00</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="customTipContainer" class="hidden">
+                    <label for="customTip" class="block text-lg font-medium mb-2">Custom Tip</label>
+                    <input type="number" id="customTip" name="customTip" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" min="0.00" step="0.01" placeholder="Enter custom tip amount">
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button type="button" id="cancelOrderButton" class="bg-gray-600 text-white font-bold py-3 px-6 rounded-md hover:bg-gray-700 transition-colors duration-300">Cancel</button>
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="generalMessageBox" class="general-message-box fixed inset-0 flex items-center justify-center hidden">
+        <div class="general-message-content p-6 rounded-lg shadow-2xl text-center w-11/12 max-w-sm">
+            <p id="generalMessageText" class="text-lg font-semibold mb-4"></p>
+            <button id="closeGeneralMessageBox" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Helper functions for localStorage
+        function getLocalStorageData(key) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                console.error(`Error parsing localStorage key "${key}":`, e);
+                return [];
+            }
+        }
+
+        function setLocalStorageData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.error(`Error saving to localStorage key "${key}":`, e);
+            }
+        }
+
+        // Message box elements and functions
+        const generalMessageBox = document.getElementById('generalMessageBox');
+        const generalMessageText = document.getElementById('generalMessageText');
+        const closeGeneralMessageBox = document.getElementById('closeGeneralMessageBox');
+
+        function showMessage(message) {
+            generalMessageText.textContent = message;
+            generalMessageBox.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            generalMessageBox.classList.add('hidden');
+        }
+
+        closeGeneralMessageBox.addEventListener('click', hideMessage);
+
+        // Buy form elements and logic
+        const buyButton = document.getElementById('buyButton');
+        const buyFormModal = document.getElementById('buyFormModal');
+        const orderForm = document.getElementById('orderForm');
+        const tipChoice = document.getElementById('tipChoice');
+        const customTipContainer = document.getElementById('customTipContainer');
+        const customTipInput = document.getElementById('customTip');
+        const willingToPayInput = document.getElementById('willingToPay');
+        const cancelOrderButton = document.getElementById('cancelOrderButton');
+        const userNameInput = document.getElementById('userName'); // New
+        const groupNameInput = document.getElementById('groupName'); // New
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (buyFormModal) {
+                buyFormModal.style.display = 'none';
+            }
+        });
+
+        const openBuyForm = () => {
+            buyFormModal.style.display = 'flex';
+            orderForm.reset();
+            tipChoice.value = '0.00';
+            customTipContainer.classList.add('hidden');
+            customTipInput.removeAttribute('required');
+        };
+
+        const closeBuyForm = () => {
+            buyFormModal.style.display = 'none';
+            hideMessage();
+        };
+
+        buyButton.addEventListener('click', openBuyForm);
+        cancelOrderButton.addEventListener('click', closeBuyForm);
+
+        tipChoice.addEventListener('change', (event) => {
+            if (event.target.value === 'custom') {
+                customTipContainer.classList.remove('hidden');
+                customTipInput.setAttribute('required', 'true');
+            } else {
+                customTipContainer.classList.add('hidden');
+                customTipInput.removeAttribute('required');
+            }
+        });
+
+        // Function to submit the order to localStorage
+        const submitOrder = (orderDetails) => {
+            let adminOrders = getLocalStorageData('adminOrders');
+            const newOrder = {
+                id: crypto.randomUUID(),
+                ...orderDetails,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            };
+            adminOrders.push(newOrder);
+            setLocalStorageData('adminOrders', adminOrders);
+            console.log("Order submitted:", newOrder);
+        };
+
+        orderForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const userName = userNameInput.value; // Get new user name
+            const groupName = groupNameInput.value; // Get new group name
+            const printName = document.getElementById('printName').value;
+            let willingToPay = parseFloat(willingToPayInput.value);
+            let tip = 0;
+
+            if (willingToPay < 2.00) {
+                showMessage("The minimum amount you are willing to pay is 2.00.");
+                return;
+            }
+
+            if (tipChoice.value === 'custom') {
+                tip = parseFloat(customTipInput.value);
+                if (isNaN(tip) || tip < 0) {
+                    showMessage("Please enter a valid custom tip amount (0 or greater).");
+                    return;
+                }
+            } else {
+                tip = parseFloat(tipChoice.value);
+            }
+
+            submitOrder({
+                userName: userName, // Include user name
+                groupName: groupName, // Include group name
+                printName: printName,
+                willingToPay: willingToPay,
+                tip: tip
+            });
+
+            showMessage("Order submitted successfully!");
+            closeBuyForm();
+        });
+    </script>
+</body>
+</html>
