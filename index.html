@@ -51,23 +51,14 @@
         }
         .modal-content {
             z-index: 1001;
-            /* Added styles for scrollability */
-            max-height: 90vh; /* Limit height to 90% of viewport height */
-            overflow-y: auto; /* Enable vertical scrolling */
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .general-message-box {
             background-color: rgba(0, 0, 0, 0.7);
             z-index: 1002;
         }
         .general-message-content {
-            background-color: #ffffff;
-            color: #1a202c;
-        }
-        .confirm-modal-overlay {
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1003;
-        }
-        .confirm-modal-content {
             background-color: #ffffff;
             color: #1a202c;
         }
@@ -104,7 +95,7 @@
 
     <div id="buyFormModal" class="modal-overlay fixed inset-0 flex items-center justify-center">
         <div class="modal-content bg-gray-800 p-8 rounded-lg shadow-2xl w-11/12 max-w-md relative">
-            <h3 class="text-3xl font-bold mb-6 text-center">Place Order</h3>
+            <h3 class="text-3xl font-bold mb-6 text-center">Place Custom Order</h3>
             <form id="orderForm" class="space-y-6">
                 <div>
                     <label for="userName" class="block text-lg font-medium mb-2">Your Name</label>
@@ -115,11 +106,11 @@
                     <input type="text" id="groupName" name="groupName" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., '[last name]' or 'Red group-B'" required>
                 </div>
                 <div>
-                    <label for="printName" class="block text-lg font-medium mb-2">Print Name</label>
+                    <label for="printName" class="block text-lg font-medium mb-2">Print Name / Details</label>
                     <input type="text" id="printName" name="printName" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 'Benchy Boat'" required>
                 </div>
                 <div>
-                    <label for="willingToPay" class="block text-lg font-medium mb-2">Willing to Pay <i style="font-size:15px;">(format: 2.00, no dollar sign ($)</i></label>
+                    <label for="willingToPay" class="block text-lg font-medium mb-2">Willing to Pay <i style="font-size:15px;">(format: 2.00, no dollar sign ($))</i></label>
                     <input type="number" id="willingToPay" name="willingToPay" class="w-full p-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" min="2.00" step="0.01" placeholder="Minimum 2.00" required>
                 </div>
                 <div>
@@ -139,7 +130,7 @@
 
                 <div class="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4">
                     <button type="button" id="cancelOrderButton" class="bg-gray-600 text-white font-bold py-3 px-6 rounded-md hover:bg-gray-700 transition-colors duration-300">Cancel</button>
-                    <button type="submit" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit Order</button>
+                    <button type="submit" id="submitOrderBtn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500">Submit Order</button>
                 </div>
             </form>
         </div>
@@ -153,7 +144,8 @@
     </div>
 
     <script>
-        // Helper functions for localStorage
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
         function getLocalStorageData(key) {
             try {
                 const data = localStorage.getItem(key);
@@ -172,7 +164,6 @@
             }
         }
 
-        // Message box elements and functions
         const generalMessageBox = document.getElementById('generalMessageBox');
         const generalMessageText = document.getElementById('generalMessageText');
         const closeGeneralMessageBox = document.getElementById('closeGeneralMessageBox');
@@ -188,7 +179,6 @@
 
         closeGeneralMessageBox.addEventListener('click', hideMessage);
 
-        // Buy form elements and logic
         const buyButton = document.getElementById('buyButton');
         const buyFormModal = document.getElementById('buyFormModal');
         const orderForm = document.getElementById('orderForm');
@@ -197,8 +187,9 @@
         const customTipInput = document.getElementById('customTip');
         const willingToPayInput = document.getElementById('willingToPay');
         const cancelOrderButton = document.getElementById('cancelOrderButton');
-        const userNameInput = document.getElementById('userName'); // New
-        const groupNameInput = document.getElementById('groupName'); // New
+        const userNameInput = document.getElementById('userName');
+        const groupNameInput = document.getElementById('groupName');
+        const submitOrderBtn = document.getElementById('submitOrderBtn');
 
         document.addEventListener('DOMContentLoaded', () => {
             if (buyFormModal) {
@@ -232,25 +223,37 @@
             }
         });
 
-        // Function to submit the order to localStorage
-        const submitOrder = (orderDetails) => {
-            let adminOrders = getLocalStorageData('adminOrders');
+        async function submitOrder(orderDetails) {
             const newOrder = {
                 id: crypto.randomUUID(),
                 ...orderDetails,
                 timestamp: new Date().toISOString(),
                 status: 'pending'
             };
+
+            let adminOrders = getLocalStorageData('adminOrders');
             adminOrders.push(newOrder);
             setLocalStorageData('adminOrders', adminOrders);
-            console.log("Order submitted:", newOrder);
-        };
 
-        orderForm.addEventListener('submit', (event) => {
+            if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'addOrder', order: newOrder })
+                    });
+                } catch (e) {
+                    console.error("Error pushing order to Google Sheet:", e);
+                }
+            }
+        }
+
+        orderForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            const userName = userNameInput.value; // Get new user name
-            const groupName = groupNameInput.value; // Get new group name
+            const userName = userNameInput.value;
+            const groupName = groupNameInput.value;
             const printName = document.getElementById('printName').value;
             let willingToPay = parseFloat(willingToPayInput.value);
             let tip = 0;
@@ -270,13 +273,19 @@
                 tip = parseFloat(tipChoice.value);
             }
 
-            submitOrder({
-                userName: userName, // Include user name
-                groupName: groupName, // Include group name
+            submitOrderBtn.disabled = true;
+            submitOrderBtn.textContent = 'Submitting...';
+
+            await submitOrder({
+                userName: userName,
+                groupName: groupName,
                 printName: printName,
                 willingToPay: willingToPay,
                 tip: tip
             });
+
+            submitOrderBtn.disabled = false;
+            submitOrderBtn.textContent = 'Submit Order';
 
             showMessage("Order submitted successfully!");
             closeBuyForm();
