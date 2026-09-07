@@ -10,59 +10,18 @@
     <link rel="shortcut icon" href="Logo.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="Logo.ico">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        .gradient-background {
-            background: linear-gradient(to bottom right, #8B5CF6, #3B82F6, #10B981);
-        }
-        .explore-button {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-        .explore-button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 300%;
-            height: 300%;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 50%;
-            transition: all 0.75s ease-out;
-            transform: translate(-50%, -50%) scale(0);
-            z-index: 0;
-        }
-        .explore-button:hover::before {
-            transform: translate(-50%, -50%) scale(1);
-        }
-        .explore-button span {
-            position: relative;
-            z-index: 1;
-        }
-        .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-        }
-        .modal-content {
-            z-index: 1001;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .general-message-box {
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1002;
-        }
-        .general-message-content {
-            background-color: #ffffff;
-            color: #1a202c;
-        }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .gradient-background { background: linear-gradient(to bottom right, #8B5CF6, #3B82F6, #10B981); }
+        .explore-button { position: relative; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+        .explore-button::before { content: ''; position: absolute; top: 50%; left: 50%; width: 300%; height: 300%; background: rgba(255, 255, 255, 0.15); border-radius: 50%; transition: all 0.75s ease-out; transform: translate(-50%, -50%) scale(0); z-index: 0; }
+        .explore-button:hover::before { transform: translate(-50%, -50%) scale(1); }
+        .explore-button span { position: relative; z-index: 1; }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.7); z-index: 1000; }
+        .modal-content { z-index: 1001; max-height: 90vh; overflow-y: auto; }
+        .general-message-box { background-color: rgba(0, 0, 0, 0.7); z-index: 1002; }
+        .general-message-content { background-color: #ffffff; color: #1a202c; }
     </style>
+    <script src="script.js"></script>
 </head>
 <body class="gradient-background text-white min-h-screen flex flex-col">
 
@@ -143,153 +102,5 @@
         </div>
     </div>
 
-    <script>
-        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
-
-        function getLocalStorageData(key) {
-            try {
-                const data = localStorage.getItem(key);
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                console.error(`Error parsing localStorage key "${key}":`, e);
-                return [];
-            }
-        }
-
-        function setLocalStorageData(key, data) {
-            try {
-                localStorage.setItem(key, JSON.stringify(data));
-            } catch (e) {
-                console.error(`Error saving to localStorage key "${key}":`, e);
-            }
-        }
-
-        const generalMessageBox = document.getElementById('generalMessageBox');
-        const generalMessageText = document.getElementById('generalMessageText');
-        const closeGeneralMessageBox = document.getElementById('closeGeneralMessageBox');
-
-        function showMessage(message) {
-            generalMessageText.textContent = message;
-            generalMessageBox.classList.remove('hidden');
-        }
-
-        function hideMessage() {
-            generalMessageBox.classList.add('hidden');
-        }
-
-        closeGeneralMessageBox.addEventListener('click', hideMessage);
-
-        const buyButton = document.getElementById('buyButton');
-        const buyFormModal = document.getElementById('buyFormModal');
-        const orderForm = document.getElementById('orderForm');
-        const tipChoice = document.getElementById('tipChoice');
-        const customTipContainer = document.getElementById('customTipContainer');
-        const customTipInput = document.getElementById('customTip');
-        const willingToPayInput = document.getElementById('willingToPay');
-        const cancelOrderButton = document.getElementById('cancelOrderButton');
-        const userNameInput = document.getElementById('userName');
-        const groupNameInput = document.getElementById('groupName');
-        const submitOrderBtn = document.getElementById('submitOrderBtn');
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (buyFormModal) {
-                buyFormModal.style.display = 'none';
-            }
-        });
-
-        const openBuyForm = () => {
-            buyFormModal.style.display = 'flex';
-            orderForm.reset();
-            tipChoice.value = '0.00';
-            customTipContainer.classList.add('hidden');
-            customTipInput.removeAttribute('required');
-        };
-
-        const closeBuyForm = () => {
-            buyFormModal.style.display = 'none';
-            hideMessage();
-        };
-
-        buyButton.addEventListener('click', openBuyForm);
-        cancelOrderButton.addEventListener('click', closeBuyForm);
-
-        tipChoice.addEventListener('change', (event) => {
-            if (event.target.value === 'custom') {
-                customTipContainer.classList.remove('hidden');
-                customTipInput.setAttribute('required', 'true');
-            } else {
-                customTipContainer.classList.add('hidden');
-                customTipInput.removeAttribute('required');
-            }
-        });
-
-        async function submitOrder(orderDetails) {
-            const newOrder = {
-                id: crypto.randomUUID(),
-                ...orderDetails,
-                timestamp: new Date().toISOString(),
-                status: 'pending'
-            };
-
-            let adminOrders = getLocalStorageData('adminOrders');
-            adminOrders.push(newOrder);
-            setLocalStorageData('adminOrders', adminOrders);
-
-            if (SCRIPT_URL && SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-                try {
-                    await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'addOrder', order: newOrder })
-                    });
-                } catch (e) {
-                    console.error("Error pushing order to Google Sheet:", e);
-                }
-            }
-        }
-
-        orderForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const userName = userNameInput.value;
-            const groupName = groupNameInput.value;
-            const printName = document.getElementById('printName').value;
-            let willingToPay = parseFloat(willingToPayInput.value);
-            let tip = 0;
-
-            if (willingToPay < 2.00) {
-                showMessage("The minimum amount you are willing to pay is 2.00.");
-                return;
-            }
-
-            if (tipChoice.value === 'custom') {
-                tip = parseFloat(customTipInput.value);
-                if (isNaN(tip) || tip < 0) {
-                    showMessage("Please enter a valid custom tip amount (0 or greater).");
-                    return;
-                }
-            } else {
-                tip = parseFloat(tipChoice.value);
-            }
-
-            submitOrderBtn.disabled = true;
-            submitOrderBtn.textContent = 'Submitting...';
-
-            await submitOrder({
-                userName: userName,
-                groupName: groupName,
-                printName: printName,
-                willingToPay: willingToPay,
-                tip: tip
-            });
-
-            submitOrderBtn.disabled = false;
-            submitOrderBtn.textContent = 'Submit Order';
-
-            showMessage("Order submitted successfully!");
-            closeBuyForm();
-        });
-    </script>
 </body>
 </html>
